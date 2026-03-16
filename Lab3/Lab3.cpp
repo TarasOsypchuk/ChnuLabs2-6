@@ -3,7 +3,9 @@
 
 using namespace std;
 
-class Sensor {
+
+
+class Sensor {///////////////////////////////////////////////////////////// 4  “Has-A” relationship.
 private:
     string type;
     double value;
@@ -17,20 +19,25 @@ public:
     double getValue() const { return value; }
 };
 
-class Person {
+
+
+class Person {/////////////////////////////////////////////////////////////1 i 3 Ієрархія вгору. Public inheritance “Is-A” relationship.
 protected:
     string name;
 public:
     Person(string n) : name(n) {
         cout << "[Person] Constructor called for " << name << endl;
     }
+    ////////////////////////////////////////// 5 послідвність десрукорів
     virtual ~Person() {
         cout << "[Person] Destructor called for " << name << endl;
     }
     virtual void work() = 0;
 };
 
-class BeeKeeper : public Person {
+
+
+class BeeKeeper : public Person {/////////////////////////////////////////////////////////////1 i 3
 private:
     int experience;
 public:
@@ -44,6 +51,9 @@ public:
         cout << name << " is collecting honey in the apiary." << endl;
     }
 };
+
+
+
 
 class BeeHive {
 protected:
@@ -81,6 +91,7 @@ public:
     friend ostream& operator<<(ostream& os, const BeeHive& hive);
 };
 
+
 int BeeHive::totalHivesCount = 0;
 
 ostream& operator<<(ostream& os, const BeeHive& hive) {
@@ -88,30 +99,39 @@ ostream& operator<<(ostream& os, const BeeHive& hive) {
     return os;
 }
 
-class SmartHive : public BeeHive {
+
+
+
+class SmartHive : public BeeHive {/////////////////////////////////////////////////////////////1 i 3 SmartHive Is-A BeeHive
 private:
     string* ipAddress;
+
+    //////////////////////4 композиція SmartHive Has-A Sensor
+
     Sensor tempSensor;
 
 public:
+
+    ////////////////////////////  5
     SmartHive(int count, string mat, double temp, string ip)
         : BeeHive(count, mat, temp), tempSensor("Temperature", temp) {
         ipAddress = new string(ip);
         cout << "[SmartHive] Connected to IP: " << *ipAddress << endl;
     }
-
+    /////////////////////////////////////////////////6 Правильна імплементація Copy/Move конструкторів
+    // 6.1 Copy
     SmartHive(const SmartHive& other)
         : BeeHive(other), tempSensor(other.tempSensor) {
         ipAddress = new string(*other.ipAddress + " (Copy)");
         cout << "[SmartHive] Copy constructor called." << endl;
     }
-
+    // 6.2 Move
     SmartHive(SmartHive&& other) noexcept
         : BeeHive(move(other)), tempSensor(move(other.tempSensor)), ipAddress(other.ipAddress) {
         other.ipAddress = nullptr;
         cout << "[SmartHive] Move constructor called." << endl;
     }
-
+    // 6.3 Copy operator=
     SmartHive& operator=(const SmartHive& other) {
         cout << "[SmartHive] Copy assignment operator called." << endl;
         if (this != &other) {
@@ -122,7 +142,7 @@ public:
         }
         return *this;
     }
-
+    // 6.4 Move Operator=
     SmartHive& operator=(SmartHive&& other) noexcept {
         cout << "[SmartHive] Move assignment operator called." << endl;
         if (this != &other) {
@@ -145,6 +165,9 @@ public:
             << beeCount << " bees, Temp: " << tempSensor.getValue() << "C" << endl;
     }
 };
+
+
+
 
 class HoneyBatch {
 private:
@@ -177,6 +200,10 @@ public:
         cout << "Batch: " << flowerType << " - " << liters << " liters" << endl;
     }
 };
+
+
+
+
 
 int main() {
     cout << "--- 1. Testing Person and BeeKeeper (Upward Hierarchy) ---" << endl;
