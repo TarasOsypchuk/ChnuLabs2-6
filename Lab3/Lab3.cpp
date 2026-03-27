@@ -3,57 +3,55 @@
 
 using namespace std;
 
+class IPrintable { ////////////////////////////////// 8 інтерфейс
+public:
+    virtual void printDetails() const = 0;
+    virtual ~IPrintable() {}
+};
 
-
-class Sensor {///////////////////////////////////////////////////////////// 4  “Has-A” relationship.
+class Sensor : public IPrintable {
 private:
     string type;
     double value;
 public:
-    Sensor(string t = "Temperature", double v = 0.0) : type(t), value(v) {
-        cout << "   [Sensor] " << type << " initialized." << endl;
-    }
-    ~Sensor() {
-        cout << "   [Sensor] " << type << " destroyed." << endl;
-    }
+    Sensor(string t = "Temperature", double v = 0.0) : type(t), value(v) {}
+    ~Sensor() override {}
     double getValue() const { return value; }
+
+    /////////////////// Реалізація інтерфейсу
+    void printDetails() const override {
+        cout << "[IPrintable] Sensor Type: " << type << ", Value: " << value << endl;
+    }
 };
 
-
-
-class Person {/////////////////////////////////////////////////////////////1 i 3 Ієрархія вгору. Public inheritance “Is-A” relationship.
+class Person {//////////////////////////// 7 чисто віртуальна функція
 protected:
     string name;
 public:
-    Person(string n) : name(n) {
-        cout << "[Person] Constructor called for " << name << endl;
-    }
-    ////////////////////////////////////////// 5 послідвність десрукорів
-    virtual ~Person() {
+    Person(string n) : name(n) {}
+
+
+    virtual ~Person() {///////////////////////// 4 Віртуальний десктруктор
         cout << "[Person] Destructor called for " << name << endl;
     }
-    virtual void work() = 0;
+
+    virtual void work() const = 0;
 };
 
 
-
-class BeeKeeper : public Person {/////////////////////////////////////////////////////////////1 i 3
+class BeeKeeper : public Person {
 private:
     int experience;
 public:
-    BeeKeeper(string name, int experience) : Person(name), experience(experience) {
-        cout << "[BeeKeeper] " << this->name << " is ready to work." << endl;
-    }
+    BeeKeeper(string name, int experience) : Person(name), experience(experience) {}
     ~BeeKeeper() override {
         cout << "[BeeKeeper] " << name << " is resting." << endl;
     }
-    void work() override {
-        cout << name << " is collecting honey in the apiary." << endl;
+
+    void work() const override {
+        cout << "[BeeKeeper] " << name << " is collecting honey in the apiary." << endl;
     }
 };
-
-
-
 
 class BeeHive {
 protected:
@@ -66,74 +64,59 @@ public:
     BeeHive(int count, string mat, double temp)
         : beeCount(count), material(mat), temperature(temp) {
         totalHivesCount++;
-        cout << "[BeeHive] Created of (" << material << ")." << endl;
     }
     BeeHive() : beeCount(0), material("Plastic"), temperature(20.0) {
         totalHivesCount++;
-        cout << "[BeeHive] Created empty." << endl;
     }
 
     virtual ~BeeHive() {
         totalHivesCount--;
-        cout << "[BeeHive] Destroyed." << endl;
     }
 
     static int getTotalHives() { return totalHivesCount; }
 
-    virtual void showStatus() const {
+
+    
+    void performMaintenance() const {/////////////////////// 1 не віртуальна функція
+        cout << "[BeeHive] Standard maintenance performed on basic hive." << endl;
+    }
+
+    virtual void showStatus() const {////////////////////// 2 дві віртуальні функцї в батьківський клас
         cout << "BeeHive : " << beeCount << " bees, Material " << material << endl;
+    }
+
+    virtual void collectResource() const {
+        cout << "[BeeHive] Collecting standard honey." << endl;
     }
 
     BeeHive& operator++() {
         this->beeCount += 500;
         return *this;
     }
-    friend ostream& operator<<(ostream& os, const BeeHive& hive);
 };
-
 
 int BeeHive::totalHivesCount = 0;
 
-ostream& operator<<(ostream& os, const BeeHive& hive) {
-    os << "Hive " << hive.material << " | Bees:" << hive.beeCount;
-    return os;
-}
-
-
-
-
-class SmartHive : public BeeHive {/////////////////////////////////////////////////////////////1 i 3 SmartHive Is-A BeeHive
+class SmartHive : public BeeHive {
 private:
     string* ipAddress;
-
-    //////////////////////4 композиція SmartHive Has-A Sensor
-
     Sensor tempSensor;
 
 public:
-
-    ////////////////////////////  5
     SmartHive(int count, string mat, double temp, string ip)
         : BeeHive(count, mat, temp), tempSensor("Temperature", temp) {
         ipAddress = new string(ip);
-        cout << "[SmartHive] Connected to IP: " << *ipAddress << endl;
     }
-    /////////////////////////////////////////////////6 Правильна імплементація Copy/Move конструкторів
-    // 6.1 Copy
+
     SmartHive(const SmartHive& other)
         : BeeHive(other), tempSensor(other.tempSensor) {
         ipAddress = new string(*other.ipAddress + " (Copy)");
-        cout << "[SmartHive] Copy constructor called." << endl;
     }
-    // 6.2 Move
     SmartHive(SmartHive&& other) noexcept
         : BeeHive(move(other)), tempSensor(move(other.tempSensor)), ipAddress(other.ipAddress) {
         other.ipAddress = nullptr;
-        cout << "[SmartHive] Move constructor called." << endl;
     }
-    // 6.3 Copy operator=
     SmartHive& operator=(const SmartHive& other) {
-        cout << "[SmartHive] Copy assignment operator called." << endl;
         if (this != &other) {
             BeeHive::operator=(other);
             tempSensor = other.tempSensor;
@@ -142,9 +125,7 @@ public:
         }
         return *this;
     }
-    // 6.4 Move Operator=
     SmartHive& operator=(SmartHive&& other) noexcept {
-        cout << "[SmartHive] Move assignment operator called." << endl;
         if (this != &other) {
             BeeHive::operator=(move(other));
             tempSensor = move(other.tempSensor);
@@ -157,19 +138,25 @@ public:
 
     ~SmartHive() override {
         delete ipAddress;
-        cout << "[SmartHive] Destroyed." << endl;
     }
 
-    void showStatus() const override {
+    void performMaintenance() const {//////////////////////// 1 переназначення=> проблема
+        cout << "[SmartHive] Updating firmware and checking sensors..." << endl;
+    }
+
+    /////////////////////////////3 перевизначення піртуальних функцій
+    ////////////////////////5 final
+    void showStatus() const override final {
         cout << "SmartHive [" << (ipAddress ? *ipAddress : "Offline") << "] : "
             << beeCount << " bees, Temp: " << tempSensor.getValue() << "C" << endl;
     }
+
+    void collectResource() const override {
+        cout << "[SmartHive] Collecting premium smart-tracked honey." << endl;
+    }
 };
 
-
-
-
-class HoneyBatch {
+class HoneyBatch : public IPrintable {////////////////////////// 8 продовження
 private:
     double liters;
     string flowerType;
@@ -178,54 +165,58 @@ private:
 public:
     HoneyBatch(double l, string type = "mixed") : liters(l), flowerType(type) {
         batchNote = new string("Standard Quality");
-        cout << "[HoneyBatch] Collected - " << liters << "l (" << flowerType << ")" << endl;
     }
+    ~HoneyBatch() override { delete batchNote; }
 
-    HoneyBatch(const HoneyBatch& other) : liters(other.liters), flowerType(other.flowerType) {
-        batchNote = new string(*other.batchNote + " (Copy)");
-    }
-
-    HoneyBatch(HoneyBatch&& other) noexcept
-        : liters(other.liters), flowerType(move(other.flowerType)), batchNote(other.batchNote) {
-        other.batchNote = nullptr;
-    }
-
-    ~HoneyBatch() { delete batchNote; }
-
-    HoneyBatch operator+(const HoneyBatch& other) {
-        return HoneyBatch(this->liters + other.liters, this->flowerType + "&" + other.flowerType);
-    }
-
-    void printInfo() const {
-        cout << "Batch: " << flowerType << " - " << liters << " liters" << endl;
+    void printDetails() const override {
+        cout << "[IPrintable] HoneyBatch: " << liters << " liters of " << flowerType << endl;
     }
 };
 
-
-
-
+void inspectHiveWithReference(const BeeHive& hive) {////////////////////// 6 Reference
+    cout << "   -> Reference Polymorphism calls: ";
+    hive.showStatus();
+}
 
 int main() {
-    cout << "--- 1. Testing Person and BeeKeeper (Upward Hierarchy) ---" << endl;
-    BeeKeeper master("Taras", 5);
-    master.work();
+    cout << " LAB 5: POLYMORPHISM DEMONSTRATION\n\n";
 
-    cout << "\n--- 2. Testing SmartHive and Composition (Downward & Has-A) ---" << endl;
-    SmartHive node1(50000, "Wood", 34.5, "192.168.1.10");
-    node1.showStatus();
+    SmartHive mySmartHive(50000, "Wood", 34.5, "192.168.1.10");
+    BeeHive myBasicHive(30000, "Straw", 25.0);
 
-    cout << "\n--- 3. Testing Rule of 5 in Derived Class ---" << endl;
-    SmartHive node2 = node1;
-    SmartHive node3(10000, "Plastic", 33.0, "192.168.1.11");
-    node3 = move(node1);
+    cout << "--- 1. Static Method Problem ---" << endl;/////////////////////// 1
+    BeeHive* ptrToSmart = &mySmartHive;
 
-    cout << "\n--- 4. Original Functionality Check ---" << endl;
-    HoneyBatch acacia(10, "Acacia");
-    HoneyBatch merged = acacia + HoneyBatch(5, "Linden");
-    merged.printInfo();
+    cout << "Calling non-virtual method via Base Pointer: " << endl;
+    ptrToSmart->performMaintenance();
 
-    cout << "\nTotal Hives active: " << BeeHive::getTotalHives() << endl;
+    cout << "Calling non-virtual method via Object directly: " << endl;
+    mySmartHive.performMaintenance();
 
-    cout << "\n--- 5. Destructor Sequence Check ---" << endl;
+    cout << "\n--- 3. Run-time Polymorphism (Base Class Pointer) ---" << endl;/////////////////////// 3 Base class pointer
+    ptrToSmart->collectResource();
+
+    cout << "\n--- 6. Run-time Polymorphism (Base Class Reference) ---" << endl;/////////////////////// 6 Base class reference
+    inspectHiveWithReference(myBasicHive);
+    inspectHiveWithReference(mySmartHive);
+
+    cout << "\n--- 7. Pure Virtual Function & Abstract Classes ---" << endl;//////////////////////// 7 abstract class
+    Person* beekeeperPtr = new BeeKeeper("Taras", 5);
+    beekeeperPtr->work();
+    delete beekeeperPtr;
+
+    cout << "\n--- 8. Interfaces (IPrintable) applied to different classes ---" << endl;/////////////////////// 8
+    Sensor mySensor("Humidity", 55.5);
+    HoneyBatch myHoney(15, "Acacia");
+
+    IPrintable* elements[2];
+    elements[0] = &mySensor;
+    elements[1] = &myHoney;
+
+    for (int i = 0; i < 2; i++) {
+        elements[i]->printDetails();
+    }
+
+    cout << "\n=== End of Lab 5 ===" << endl;
     return 0;
 }
