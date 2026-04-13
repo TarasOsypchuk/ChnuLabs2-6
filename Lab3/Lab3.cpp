@@ -1,13 +1,12 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <memory>   // Requirement: Smart pointers 
-#include <fstream>  // Task 6: File saving 
-#include <stdexcept> // Task 9: Exception handling 
+#include <memory>
+#include <fstream>
+#include <stdexcept>
 
 using namespace std;
 
-// --- LAB 5: POLYMORPHIC INTERFACE & CLASSES ---
 
 class IPrintable {
 public:
@@ -55,28 +54,27 @@ public:
     }
 };
 
-// --- LAB 6: SYSTEM MANAGEMENT ---
 
 class BeekeepingSystem {
-    // Topic: Using Smart Pointers (unique_ptr) instead of raw pointers 
+    /////////////////////////////////Smart Pointers
     vector<unique_ptr<IPrintable>> inventory; 
     const string DATA_FILE = "data.txt";
     const string HISTORY_FILE = "history.txt";
 
-    // Task 8: Save user action history 
+    ////////////////////////////// 8: Save user action history 
     void logAction(const string& action) {
         ofstream log(HISTORY_FILE, ios::app);
         if (log) log << "Action Log: " << action << endl;
     }
 
 public:
-    // Task 4: Administrator ability to update/add information 
+    ////////////////////////////4 update/add information 
     void addItem(unique_ptr<IPrintable> item) {
         inventory.push_back(move(item));
         logAction("Added new item to system.");
     }
 
-    // Task 5: User can only view what admin filled 
+    ///////////////////////////////////5: User view 
     void showInventory() {
         if (inventory.empty()) {
             cout << "No data available." << endl;
@@ -88,7 +86,7 @@ public:
         logAction("Viewed inventory items.");
     }
 
-    // Task 6: Data saving using files 
+    //////////////////////////6: Data save
     void saveToFiles() {
         ofstream out(DATA_FILE);
         // Task 9: Exception handling for file operations 
@@ -100,7 +98,7 @@ public:
         logAction("Saved current state to file.");
     }
 
-    // Task 7: Data must not be lost after restart (Loading) 
+    //////////////////////// 7 Loading
     void loadFromFiles() {
         ifstream in(DATA_FILE);
         if (!in) return; 
@@ -126,13 +124,13 @@ int main() {
     // Task 7: Load data on startup 
     system.loadFromFiles();
 
-    // Task 1 & 2: Console menu with two types (Admin/User) 
+    ////////////////////// 1  2: Console menu with two types (Admin/User) 
     int role;
     cout << "Select Access Level:\n1. Administrator\n2. Standard User\nChoice: ";
     cin >> role;
 
     if (role == 1) {
-        // Task 3: Administrator must have a password 
+        /////////////////////3: Administrator must have a password 
         string password;
         cout << "Enter Admin Password: ";
         cin >> password;
@@ -144,11 +142,11 @@ int main() {
 
         int choice = -1;
         while (choice != 0) {
-            // Task 1: Console menu for interaction 
+            ////////////////////////1 Console menu for interaction 
             cout << "\n--- ADMIN MENU ---\n1. Add Smart Hive\n2. Add Honey\n3. View All\n4. Save to File\n0. Exit\nChoice: ";
             cin >> choice;
 
-            // Task 9: Processing exceptional situations 
+            //////////////////////////9: Processing exceptional situations 
             try {
                 if (choice == 1) {
                     int id, count;
@@ -173,11 +171,9 @@ int main() {
             }
         }
     } else {
-        // Task 5: Standard user can only view functionality 
+        ///////////////////////////////////5: Standard user can only view functionality 
         cout << "\n--- USER VIEW ---\n";
         system.showInventory();
     }
-
-    // Task 10: Final note - commit changes to GitHub without push-bombs 
     return 0;
 }
