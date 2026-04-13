@@ -7,24 +7,36 @@
 
 using namespace std;
 
-class IPrintable { ////////////////////////////////// 8 інтерфейс
+class IPrintable {
 public:
     virtual void printDetails() const = 0;
+    virtual string serialize() const = 0; // Needed for Task 6 
     virtual ~IPrintable() {}
 };
 
-class Sensor : public IPrintable {
-private:
-    string type;
-    double value;
+class BeeHive : public IPrintable {
+protected:
+    int id;
+    int beesCount;
 public:
-    Sensor(string t = "Temperature", double v = 0.0) : type(t), value(v) {}
-    ~Sensor() override {}
-    double getValue() const { return value; }
+    BeeHive(int i, int count) : id(i), beesCount(count) {}
+    virtual void printDetails() const override {
+        cout << "[Hive] ID: " << id << ", Bees: " << beesCount << endl;
+    }
+    // Task 6: Preparing data for file storage 
+    string serialize() const override { 
+        return "HIVE " + to_string(id) + " " + to_string(beesCount); 
+    }
+};
 
-    /////////////////// Реалізація інтерфейсу
-    void printDetails() const override {
-        cout << "[IPrintable] Sensor Type: " << type << ", Value: " << value << endl;
+class SmartHive : public BeeHive {
+public:
+    SmartHive(int i, int count) : BeeHive(i, count) {}
+    void printDetails() const override final {
+        cout << "[SmartHive] ID: " << id << ", Bees: " << beesCount << " (Electronic Monitoring)" << endl;
+    }
+    string serialize() const override { 
+        return "SMARTHIVE " + to_string(id) + " " + to_string(beesCount); 
     }
 };
 
