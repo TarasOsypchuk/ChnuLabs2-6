@@ -1,5 +1,9 @@
 #include <iostream>
+#include <vector>
 #include <string>
+#include <memory>
+#include <fstream>
+#include <stdexcept>
 
 using namespace std;
 
