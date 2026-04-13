@@ -1,11 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <memory>
-#include <fstream>
-#include <stdexcept>
+#include <memory>   // Requirement: Smart pointers 
+#include <fstream>  // Task 6: File saving 
+#include <stdexcept> // Task 9: Exception handling 
 
 using namespace std;
+
+// --- LAB 5: POLYMORPHIC INTERFACE & CLASSES ---
 
 class IPrintable {
 public:
@@ -40,199 +42,142 @@ public:
     }
 };
 
-class Person {//////////////////////////// 7 чисто віртуальна функція
-protected:
-    string name;
+class HoneyBatch : public IPrintable {
+    string flowerSource;
+    double weight;
 public:
-    Person(string n) : name(n) {}
-
-
-    virtual ~Person() {///////////////////////// 4 Віртуальний десктруктор
-        cout << "[Person] Destructor called for " << name << endl;
-    }
-
-    virtual void work() const = 0;
-};
-
-
-class BeeKeeper : public Person {
-private:
-    int experience;
-public:
-    BeeKeeper(string name, int experience) : Person(name), experience(experience) {}
-    ~BeeKeeper() override {
-        cout << "[BeeKeeper] " << name << " is resting." << endl;
-    }
-
-    void work() const override {
-        cout << "[BeeKeeper] " << name << " is collecting honey in the apiary." << endl;
-    }
-};
-
-class BeeHive {
-protected:
-    int beeCount;
-    string material;
-    double temperature;
-    static int totalHivesCount;
-
-public:
-    BeeHive(int count, string mat, double temp)
-        : beeCount(count), material(mat), temperature(temp) {
-        totalHivesCount++;
-    }
-    BeeHive() : beeCount(0), material("Plastic"), temperature(20.0) {
-        totalHivesCount++;
-    }
-
-    virtual ~BeeHive() {
-        totalHivesCount--;
-    }
-
-    static int getTotalHives() { return totalHivesCount; }
-
-
-    
-    void performMaintenance() const {/////////////////////// 1 не віртуальна функція
-        cout << "[BeeHive] Standard maintenance performed on basic hive." << endl;
-    }
-
-    virtual void showStatus() const {////////////////////// 2 дві віртуальні функцї в батьківський клас
-        cout << "BeeHive : " << beeCount << " bees, Material " << material << endl;
-    }
-
-    virtual void collectResource() const {
-        cout << "[BeeHive] Collecting standard honey." << endl;
-    }
-
-    BeeHive& operator++() {
-        this->beeCount += 500;
-        return *this;
-    }
-};
-
-int BeeHive::totalHivesCount = 0;
-
-class SmartHive : public BeeHive {
-private:
-    string* ipAddress;
-    Sensor tempSensor;
-
-public:
-    SmartHive(int count, string mat, double temp, string ip)
-        : BeeHive(count, mat, temp), tempSensor("Temperature", temp) {
-        ipAddress = new string(ip);
-    }
-
-    SmartHive(const SmartHive& other)
-        : BeeHive(other), tempSensor(other.tempSensor) {
-        ipAddress = new string(*other.ipAddress + " (Copy)");
-    }
-    SmartHive(SmartHive&& other) noexcept
-        : BeeHive(move(other)), tempSensor(move(other.tempSensor)), ipAddress(other.ipAddress) {
-        other.ipAddress = nullptr;
-    }
-    SmartHive& operator=(const SmartHive& other) {
-        if (this != &other) {
-            BeeHive::operator=(other);
-            tempSensor = other.tempSensor;
-            delete ipAddress;
-            ipAddress = new string(*other.ipAddress);
-        }
-        return *this;
-    }
-    SmartHive& operator=(SmartHive&& other) noexcept {
-        if (this != &other) {
-            BeeHive::operator=(move(other));
-            tempSensor = move(other.tempSensor);
-            delete ipAddress;
-            ipAddress = other.ipAddress;
-            other.ipAddress = nullptr;
-        }
-        return *this;
-    }
-
-    ~SmartHive() override {
-        delete ipAddress;
-    }
-
-    void performMaintenance() const {//////////////////////// 1 переназначення=> проблема
-        cout << "[SmartHive] Updating firmware and checking sensors..." << endl;
-    }
-
-    /////////////////////////////3 перевизначення піртуальних функцій
-    ////////////////////////5 final
-    void showStatus() const override final {
-        cout << "SmartHive [" << (ipAddress ? *ipAddress : "Offline") << "] : "
-            << beeCount << " bees, Temp: " << tempSensor.getValue() << "C" << endl;
-    }
-
-    void collectResource() const override {
-        cout << "[SmartHive] Collecting premium smart-tracked honey." << endl;
-    }
-};
-
-class HoneyBatch : public IPrintable {////////////////////////// 8 продовження
-private:
-    double liters;
-    string flowerType;
-    string* batchNote;
-
-public:
-    HoneyBatch(double l, string type = "mixed") : liters(l), flowerType(type) {
-        batchNote = new string("Standard Quality");
-    }
-    ~HoneyBatch() override { delete batchNote; }
-
+    HoneyBatch(string source, double w) : flowerSource(source), weight(w) {}
     void printDetails() const override {
-        cout << "[IPrintable] HoneyBatch: " << liters << " liters of " << flowerType << endl;
+        cout << "[Honey] Source: " << flowerSource << ", Weight: " << weight << "kg" << endl;
+    }
+    string serialize() const override { 
+        return "HONEY " + flowerSource + " " + to_string(weight); 
     }
 };
 
-void inspectHiveWithReference(const BeeHive& hive) {////////////////////// 6 Reference
-    cout << "   -> Reference Polymorphism calls: ";
-    hive.showStatus();
-}
+// --- LAB 6: SYSTEM MANAGEMENT ---
+
+class BeekeepingSystem {
+    // Topic: Using Smart Pointers (unique_ptr) instead of raw pointers 
+    vector<unique_ptr<IPrintable>> inventory; 
+    const string DATA_FILE = "data.txt";
+    const string HISTORY_FILE = "history.txt";
+
+    // Task 8: Save user action history 
+    void logAction(const string& action) {
+        ofstream log(HISTORY_FILE, ios::app);
+        if (log) log << "Action Log: " << action << endl;
+    }
+
+public:
+    // Task 4: Administrator ability to update/add information 
+    void addItem(unique_ptr<IPrintable> item) {
+        inventory.push_back(move(item));
+        logAction("Added new item to system.");
+    }
+
+    // Task 5: User can only view what admin filled 
+    void showInventory() {
+        if (inventory.empty()) {
+            cout << "No data available." << endl;
+            return;
+        }
+        for (const auto& item : inventory) {
+            item->printDetails();
+        }
+        logAction("Viewed inventory items.");
+    }
+
+    // Task 6: Data saving using files 
+    void saveToFiles() {
+        ofstream out(DATA_FILE);
+        // Task 9: Exception handling for file operations 
+        if (!out) throw runtime_error("Critical Error: Could not open data file for saving!");
+        
+        for (const auto& item : inventory) {
+            out << item->serialize() << endl;
+        }
+        logAction("Saved current state to file.");
+    }
+
+    // Task 7: Data must not be lost after restart (Loading) 
+    void loadFromFiles() {
+        ifstream in(DATA_FILE);
+        if (!in) return; 
+
+        string type;
+        while (in >> type) {
+            if (type == "HIVE") {
+                int id, count; in >> id >> count;
+                inventory.push_back(make_unique<BeeHive>(id, count));
+            } else if (type == "SMARTHIVE") {
+                int id, count; in >> id >> count;
+                inventory.push_back(make_unique<SmartHive>(id, count));
+            } else if (type == "HONEY") {
+                string src; double w; in >> src >> w;
+                inventory.push_back(make_unique<HoneyBatch>(src, w));
+            }
+        }
+    }
+};
 
 int main() {
-    cout << " LAB 5: POLYMORPHISM DEMONSTRATION\n\n";
+    BeekeepingSystem system;
+    // Task 7: Load data on startup 
+    system.loadFromFiles();
 
-    SmartHive mySmartHive(50000, "Wood", 34.5, "192.168.1.10");
-    BeeHive myBasicHive(30000, "Straw", 25.0);
+    // Task 1 & 2: Console menu with two types (Admin/User) 
+    int role;
+    cout << "Select Access Level:\n1. Administrator\n2. Standard User\nChoice: ";
+    cin >> role;
 
-    cout << "--- 1. Static Method Problem ---" << endl;/////////////////////// 1
-    BeeHive* ptrToSmart = &mySmartHive;
+    if (role == 1) {
+        // Task 3: Administrator must have a password 
+        string password;
+        cout << "Enter Admin Password: ";
+        cin >> password;
 
-    cout << "Calling non-virtual method via Base Pointer: " << endl;
-    ptrToSmart->performMaintenance();
+        if (password != "chnu_ipz_2026") {
+            cout << "Invalid password. Access denied." << endl;
+            return 0;
+        }
 
-    cout << "Calling non-virtual method via Object directly: " << endl;
-    mySmartHive.performMaintenance();
+        int choice = -1;
+        while (choice != 0) {
+            // Task 1: Console menu for interaction 
+            cout << "\n--- ADMIN MENU ---\n1. Add Smart Hive\n2. Add Honey\n3. View All\n4. Save to File\n0. Exit\nChoice: ";
+            cin >> choice;
 
-    cout << "\n--- 3. Run-time Polymorphism (Base Class Pointer) ---" << endl;/////////////////////// 3 Base class pointer
-    ptrToSmart->collectResource();
-
-    cout << "\n--- 6. Run-time Polymorphism (Base Class Reference) ---" << endl;/////////////////////// 6 Base class reference
-    inspectHiveWithReference(myBasicHive);
-    inspectHiveWithReference(mySmartHive);
-
-    cout << "\n--- 7. Pure Virtual Function & Abstract Classes ---" << endl;//////////////////////// 7 abstract class
-    Person* beekeeperPtr = new BeeKeeper("Taras", 5);
-    beekeeperPtr->work();
-    delete beekeeperPtr;
-
-    cout << "\n--- 8. Interfaces (IPrintable) applied to different classes ---" << endl;/////////////////////// 8
-    Sensor mySensor("Humidity", 55.5);
-    HoneyBatch myHoney(15, "Acacia");
-
-    IPrintable* elements[2];
-    elements[0] = &mySensor;
-    elements[1] = &myHoney;
-
-    for (int i = 0; i < 2; i++) {
-        elements[i]->printDetails();
+            // Task 9: Processing exceptional situations 
+            try {
+                if (choice == 1) {
+                    int id, count;
+                    cout << "ID and Bee Count: ";
+                    if (!(cin >> id >> count)) throw invalid_argument("Numeric input required!");
+                    system.addItem(make_unique<SmartHive>(id, count));
+                } else if (choice == 2) {
+                    string src; double w;
+                    cout << "Honey Source and Weight: ";
+                    cin >> src >> w;
+                    system.addItem(make_unique<HoneyBatch>(src, w));
+                } else if (choice == 3) {
+                    system.showInventory();
+                } else if (choice == 4) {
+                    system.saveToFiles();
+                    cout << "System state saved successfully." << endl;
+                }
+            } catch (const exception& e) {
+                cout << "Caught Exception: " << e.what() << endl;
+                cin.clear(); // Clear error flags
+                cin.ignore(1000, '\n'); // Clear buffer
+            }
+        }
+    } else {
+        // Task 5: Standard user can only view functionality 
+        cout << "\n--- USER VIEW ---\n";
+        system.showInventory();
     }
 
-    cout << "\n=== End of Lab 5 ===" << endl;
+    // Task 10: Final note - commit changes to GitHub without push-bombs 
     return 0;
 }
